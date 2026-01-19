@@ -1,379 +1,359 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Play, ArrowRight, Instagram, Phone, Menu, X, Quote, ChevronLeft, ChevronRight, Award, Leaf, Clock, Mail, Facebook, Linkedin } from 'lucide-react';
+import { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { ShoppingBag, Star, ArrowRight, Instagram, MapPin, Phone, ChefHat, Coffee, Heart, Cake, Mail, Facebook, Menu as MenuIcon, X, MessageCircle } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import Lenis from 'lenis';
+import { CONTACT_INFO, MESSAGES, FORMSPREE_URL } from './config';
 
-// --- DADOS EM REAIS (BRASIL) ---
-const menuCategories = [
-  { id: 'all', label: 'Todos' },
-  { id: 'cakes', label: 'Bolos Assinatura' },
-  { id: 'sweets', label: 'Doces Finos' },
-  { id: 'gifts', label: 'Presentes' }
-];
-
-const allProducts = [
-  { id: 1, name: "Red Velvet Royal", price: "R$ 129,90", category: "cakes", img: "https://images.unsplash.com/photo-1616031037011-087000171abe?q=80&w=600&auto=format&fit=crop" },
-  { id: 2, name: "Trufa Dark 70%", price: "R$ 8,50", category: "sweets", img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=600&auto=format&fit=crop" },
-  { id: 3, name: "Torre de Macarons", price: "R$ 145,00", category: "gifts", img: "https://images.unsplash.com/photo-1569864358642-9d1684040f43?q=80&w=600&auto=format&fit=crop" },
-  { id: 4, name: "Torta de Limão Gold", price: "R$ 15,00", category: "sweets", img: "https://images.unsplash.com/photo-1519915028121-7d3463d20b13?q=80&w=600&auto=format&fit=crop" },
-  { id: 5, name: "Cheesecake Frutos", price: "R$ 22,00", category: "cakes", img: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?q=80&w=600&auto=format&fit=crop" },
-  { id: 6, name: "Caixa Degustação", price: "R$ 65,00", category: "gifts", img: "https://images.unsplash.com/photo-1548842790-a35949d26829?q=80&w=600&auto=format&fit=crop" },
-];
-
-const testimonials = [
-  { id: 1, text: "O melhor bolo que já comi em Belém do Pará. O Red Velvet é simplesmente divino e a apresentação impecável.", author: "Ana Silva", role: "Crítica Gastronômica" },
-  { id: 2, text: "Elegância pura. Encomendei para um evento corporativo e impressionou todos os diretores.", author: "Ricardo Mendes", role: "CEO Tech" },
-  { id: 3, text: "O cuidado com os detalhes é visível. Desde a embalagem até o sabor equilibrado do chocolate belga.", author: "Sofia Paiva", role: "Influenciadora" },
-];
-
-// --- COMPONENTES VISUAIS ---
-const FadeInUp = ({ children, delay = 0 }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 40 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: "-50px" }}
-    transition={{ duration: 0.8, delay, ease: [0.22, 1, 0.36, 1] }}
-  >
-    {children}
-  </motion.div>
-);
-
-const GoldSeparator = () => <div className="h-[2px] w-12 bg-[#D4AF37] mb-6"></div>;
-
-// --- SEÇÕES ---
-
-const MenuModal = ({ isOpen, onClose }) => {
-  const [activeCategory, setActiveCategory] = useState('all');
-  const filteredProducts = activeCategory === 'all' ? allProducts : allProducts.filter(p => p.category === activeCategory);
-
-  useEffect(() => {
-    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
-
+// --- LOADING SCREEN ---
+const LoadingScreen = () => {
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div 
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-[#F9F5F0]/95 backdrop-blur-xl overflow-hidden flex flex-col"
-        >
-          <div className="flex justify-between items-center p-6 md:p-8 border-b border-stone-200">
-            <div>
-              <h2 className="font-display text-3xl md:text-4xl text-[#1A1A1A]">Cardápio</h2>
-              <p className="text-[#D4AF37] text-xs font-bold tracking-wider mt-1 uppercase">Seleção Artesanal</p>
-            </div>
-            <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors"><X size={28} /></button>
-          </div>
-          
-          <div className="flex justify-center py-6 bg-white shadow-sm">
-            <div className="flex gap-2 overflow-x-auto px-6 no-scrollbar">
-              {menuCategories.map(cat => (
-                <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
-                  className={`px-6 py-2 rounded-full text-xs font-bold tracking-widest transition-all whitespace-nowrap uppercase border ${activeCategory === cat.id ? 'bg-[#1A1A1A] text-[#D4AF37] border-[#1A1A1A]' : 'bg-transparent text-gray-500 border-gray-200 hover:border-[#1A1A1A]'}`}>
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-6 py-8 no-scrollbar bg-[#F9F5F0]">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <AnimatePresence mode="popLayout">
-                {filteredProducts.map((product) => (
-                  <motion.div layout key={product.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                    className="flex gap-4 items-center p-4 rounded-2xl bg-white shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer border border-stone-100"
-                  >
-                    <div className="overflow-hidden rounded-xl w-24 h-24">
-                      <img src={product.img} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                    </div>
-                    <div>
-                      <h3 className="font-display text-lg text-[#1A1A1A] leading-tight group-hover:text-[#D4AF37] transition-colors">{product.name}</h3>
-                      <p className="text-[#D4AF37] font-bold mt-1 text-md">{product.price}</p>
-                      <button className="text-[10px] font-black uppercase tracking-widest mt-2 border-b border-gray-300 pb-0.5 group-hover:border-[#1A1A1A] transition-all">Adicionar</button>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-};
-
-const IngredientsSection = () => {
-  const items = [
-    { icon: Award, title: "Origem Controlada", desc: "Chocolate belga 70% e baunilha de Madagascar." },
-    { icon: Clock, title: "Frescor Diário", desc: "Produção limitada e feita no dia da entrega." },
-    { icon: Leaf, title: "100% Natural", desc: "Zero conservantes, essências artificiais ou corantes." },
-  ];
-
-  return (
-    <section className="py-24 bg-white relative">
-      <div className="max-w-7xl mx-auto px-6">
-        <FadeInUp>
-          <div className="text-center mb-16">
-            <span className="text-[#D4AF37] font-bold tracking-[0.2em] text-xs uppercase mb-2 block">Nossa Essência</span>
-            <h2 className="font-display text-4xl md:text-5xl text-[#1A1A1A]">Padrão Ely<span className="text-[#D4AF37]">.</span></h2>
-          </div>
-        </FadeInUp>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 border-t border-gray-100 pt-12">
-          {items.map((item, index) => (
-            <FadeInUp key={index} delay={index * 0.2}>
-              <div className="flex flex-col items-center text-center group">
-                <div className="w-16 h-16 mb-6 rounded-full bg-[#F9F5F0] flex items-center justify-center group-hover:bg-[#1A1A1A] transition-colors duration-500">
-                  <item.icon className="w-6 h-6 text-[#1A1A1A] group-hover:text-[#D4AF37] transition-colors duration-500" />
-                </div>
-                <h3 className="font-display text-xl mb-3 text-[#1A1A1A]">{item.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed max-w-xs">{item.desc}</p>
-              </div>
-            </FadeInUp>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-const Testimonials = () => {
-  const [index, setIndex] = useState(0);
-  const next = () => setIndex((prev) => (prev + 1) % testimonials.length);
-  const prev = () => setIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-
-  return (
-    <section id="testimonials" className="py-32 bg-[#111111] text-white relative overflow-hidden">
-      {/* Noise Texture Overlay */}
-      <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`}}></div>
-      
-      <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
-        <FadeInUp>
-          <Quote className="w-16 h-16 text-[#D4AF37] mx-auto mb-10 opacity-40" />
-        </FadeInUp>
-        <AnimatePresence mode='wait'>
+    <motion.div
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.8, ease: "easeInOut" } }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-pink"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="text-center flex flex-col items-center px-4"
+      >
+        <Cake className="h-20 w-20 md:h-24 md:w-24 text-brand-gold animate-bounce" />
+        <div className="mt-8 h-1 w-32 overflow-hidden rounded-full bg-white/30 mx-auto">
           <motion.div
-            key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }}
-            className="min-h-[180px]"
-          >
-            <p className="font-display text-2xl md:text-4xl leading-relaxed mb-8 text-[#F9F5F0] italic">"{testimonials[index].text}"</p>
-            <div>
-              <p className="text-[#D4AF37] font-bold tracking-widest text-xs uppercase mb-1">{testimonials[index].author}</p>
-              <p className="text-gray-500 text-[10px] font-bold tracking-widest uppercase">{testimonials[index].role}</p>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-        <div className="flex justify-center gap-4 mt-12">
-          <button onClick={prev} className="p-3 rounded-full border border-white/10 hover:bg-[#D4AF37] hover:border-[#D4AF37] hover:text-[#1A1A1A] transition-all"><ChevronLeft size={20} /></button>
-          <button onClick={next} className="p-3 rounded-full border border-white/10 hover:bg-[#D4AF37] hover:border-[#D4AF37] hover:text-[#1A1A1A] transition-all"><ChevronRight size={20} /></button>
+            className="h-full bg-brand-gold"
+            initial={{ width: 0 }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+          />
         </div>
-      </div>
-    </section>
+      </motion.div>
+    </motion.div>
   );
 };
 
-// --- RODAPÉ REDESENHADO (CONTRASTE TOTAL) ---
-const Footer = () => {
-  return (
-    <footer className="bg-[#050505] text-white pt-24 pb-12 relative overflow-hidden">
-       {/* Background Glow */}
-       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-50"></div>
+const PRODUCTS = [
+  { id: 1, name: "Red Velvet Premium", category: "Bolos", price: "R$ 120", img: "https://images.unsplash.com/photo-1616541823729-00fe0aacd32c?q=80&w=800&auto=format&fit=crop" },
+  { id: 2, name: "Macarons Franceses", category: "Doces", price: "R$ 65", img: "https://images.unsplash.com/photo-1569864358642-9d1684040f43?q=80&w=800&auto=format&fit=crop" },
+  { id: 3, name: "Cheesecake de Frutas", category: "Tortas", price: "R$ 95", img: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?q=80&w=800&auto=format&fit=crop" },
+  { id: 4, name: "Cupcake de Chocolate", category: "Doces", price: "R$ 15", img: "https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?q=80&w=800&auto=format&fit=crop" },
+];
 
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 pb-16 border-b border-white/10">
-          
-          {/* Coluna 1: Marca e Newsletter */}
-          <div className="lg:col-span-5">
-            <h2 className="font-display text-5xl text-white mb-6">Ely<span className="text-[#D4AF37]">.</span></h2>
-            <p className="text-gray-400 max-w-sm mb-8 font-light leading-relaxed">
-              Transformando ingredientes nobres em momentos inesquecíveis. A doçura da vida, elevada ao nível da arte.
-            </p>
-            
-            <div className="max-w-sm">
-              <label className="text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2 block">Newsletter</label>
-              <div className="flex border-b border-white/20 focus-within:border-[#D4AF37] transition-colors pb-2">
-                <input type="email" placeholder="Seu melhor e-mail" className="bg-transparent w-full outline-none text-white placeholder-gray-600 text-sm" />
-                <button className="text-white hover:text-[#D4AF37] uppercase text-xs font-bold transition-colors">Assinar</button>
-              </div>
-            </div>
-          </div>
+function App() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState('Todos');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [email, setEmail] = useState('');
 
-          {/* Coluna 2: Links Rápidos */}
-          <div className="lg:col-span-3 lg:pl-10">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-6">Explorar</h4>
-            <ul className="space-y-4 text-sm text-gray-400 font-medium">
-              {['Home', 'Nossa História', 'Cardápio Completo', 'Eventos', 'Contato'].map(item => (
-                <li key={item}><a href="#" className="hover:text-white transition-colors flex items-center gap-2 group">
-                  <span className="w-0 group-hover:w-2 h-[1px] bg-[#D4AF37] transition-all"></span>{item}
-                </a></li>
-              ))}
-            </ul>
-          </div>
+  const lenisRef = useRef(null);
 
-          {/* Coluna 3: Contato */}
-          <div className="lg:col-span-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-6">Fale Conosco</h4>
-            <p className="text-2xl font-display text-white mb-1 hover:text-[#D4AF37] transition-colors cursor-pointer">contato@elydoce.com.br</p>
-            <p className="text-lg text-gray-400 mb-6">+55 11 9199150-7786 </p>
-            
-            <div className="flex gap-4">
-              {[Instagram, Facebook, Linkedin].map((Icon, i) => (
-                <a key={i} href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-[#D4AF37] hover:text-black transition-all">
-                  <Icon size={18} />
-                </a>
-              ))}
-            </div>
-            <p className="text-gray-500 text-xs mt-8">Avenida Bernardo Sayão, 123 - Belém, Pará - PA</p>
-          </div>
-        </div>
-
-        <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-600 text-xs font-bold tracking-widest uppercase">
-            &copy; 2025 Ely Doces. Todos os direitos reservados.
-          </p>
-          <p className="text-gray-600 text-xs font-bold tracking-widest uppercase flex items-center gap-1">
-            Design by <span className="text-[#D4AF37]">Vitor Hugo</span>
-          </p>
-        </div>
-      </div>
-    </footer>
-  );
-};
-
-// --- ESTRUTURA GLOBAL ---
-const Navbar = ({ toggleMenu }) => {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll); return () => window.removeEventListener('scroll', handleScroll);
+  // --- RESET DE SCROLL E RESOLUÇÃO ---
+  useLayoutEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
   }, []);
 
+  // --- CONFIGURAÇÃO DO LENIS ---
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      direction: 'vertical',
+      gestureDirection: 'vertical',
+      smooth: true,
+      mouseMultiplier: 1,
+      smoothTouch: false,
+      touchMultiplier: 2,
+    });
+
+    lenisRef.current = lenis;
+    lenis.scrollTo(0, { immediate: true });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    return () => lenis.destroy();
+  }, []);
+
+  // --- FUNÇÃO DE SCROLL BLINDADA (CORRIGIDA PARA INÍCIO) ---
+  const scrollToSection = (e, sectionId) => {
+    e.preventDefault();
+
+    // 1. Correção Específica para o Início
+    if (sectionId === '#inicio') {
+      if (lenisRef.current) {
+        // Rola para o pixel 0 (Topo Absoluto)
+        lenisRef.current.scrollTo(0, { duration: 1.5 });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      setIsMobileMenuOpen(false);
+      return; // Encerra aqui para não buscar ID
+    }
+
+    // 2. Lógica normal para as outras seções
+    const element = document.querySelector(sectionId);
+    if (!element) return;
+
+    if (lenisRef.current) {
+      lenisRef.current.scrollTo(element, {
+        offset: 0,
+        duration: 1.5,
+      });
+    } else {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    setIsMobileMenuOpen(false);
+  };
+
+  const { scrollY } = useScroll();
+  const yHero = useTransform(scrollY, [0, 500], [0, 150]);
+  const rotateHero = useTransform(scrollY, [0, 500], [0, 10]);
+  const yAbout = useTransform(scrollY, [0, 800], [0, -50]);
+
+  const handleWhatsApp = () => {
+    const url = `https://wa.me/${CONTACT_INFO.whatsapp}?text=${encodeURIComponent(MESSAGES.order)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleNewsletterSubmit = (e) => {
+    e.preventDefault();
+    if (FORMSPREE_URL.includes("SEU_CODIGO_AQUI")) {
+      alert(`Simulação: O e-mail ${email} foi cadastrado!`);
+      setEmail('');
+    } else {
+      e.target.submit();
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const filteredProducts = activeCategory === 'Todos' ? PRODUCTS : PRODUCTS.filter(p => p.category === activeCategory);
+
   return (
-    <header className={`fixed top-0 w-full z-50 transition-all duration-500 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-4' : 'bg-transparent py-6'}`}>
-      <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-        <h1 className="font-display text-3xl font-bold tracking-tighter text-[#1A1A1A]">Ely<span className="text-[#D4AF37]">.</span></h1>
-        <nav className="hidden md:flex gap-8 text-xs font-bold tracking-[0.15em] text-[#1A1A1A] uppercase">
-          <button onClick={toggleMenu} className="hover:text-[#D4AF37] transition-colors relative group">Menu</button>
-          <a href="#story" className="hover:text-[#D4AF37] transition-colors relative group">Sobre</a>
-          <a href="#testimonials" className="hover:text-[#D4AF37] transition-colors relative group">Clientes</a>
-        </nav>
-        <div className="flex items-center gap-4">
-          <button onClick={toggleMenu} className="hidden md:flex items-center gap-2 bg-[#1A1A1A] text-[#D4AF37] px-6 py-3 rounded-full text-[10px] font-bold tracking-[0.2em] hover:bg-[#D4AF37] hover:text-[#1A1A1A] transition-colors shadow-lg">
-            CARDÁPIO
-          </button>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-[#1A1A1A]">{menuOpen ? <X /> : <Menu />}</button>
-        </div>
-      </div>
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-[#F9F5F0] z-40 flex flex-col items-center justify-center gap-8 md:hidden">
-             <button onClick={() => { setMenuOpen(false); toggleMenu(); }} className="text-4xl font-display text-[#1A1A1A]">MENU</button>
-             <a href="#story" onClick={() => setMenuOpen(false)} className="text-4xl font-display text-[#1A1A1A]">SOBRE</a>
-             <a href="#testimonials" onClick={() => setMenuOpen(false)} className="text-4xl font-display text-[#1A1A1A]">CLIENTES</a>
-             <button onClick={() => setMenuOpen(false)} className="mt-8 text-sm font-bold tracking-widest text-[#1A1A1A] border-b border-[#1A1A1A]">FECHAR</button>
-          </motion.div>
-        )}
+    <>
+      <Helmet>
+        <title>Ely Doces | Confeitaria Artesanal </title>
+        <meta name="description" content="Bolos artísticos e doces finos em São Paulo." />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        <meta name="theme-color" content="#FDFBF7" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </Helmet>
+
+      <AnimatePresence mode="wait">
+        {isLoading && <LoadingScreen />}
       </AnimatePresence>
-    </header>
-  );
-};
 
-const Hero = ({ onOpenMenu }) => {
-  return (
-    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-[#Fdfdfd]">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full z-10">
-        <motion.div initial={{ opacity: 0, y: 80 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}>
-          <GoldSeparator />
-          <span className="text-[#D4AF37] text-xs font-bold tracking-[0.3em] uppercase mb-4 block">Alta Confeitaria</span>
-          <h1 className="font-display text-5xl md:text-7xl lg:text-8xl text-[#1A1A1A] leading-[0.95] mb-8">
-            Sabor de<br/><span className="italic text-[#D4AF37]">Luxo.</span>
-          </h1>
-          <p className="text-gray-500 max-w-md mb-12 leading-relaxed font-medium text-lg">
-            Bolos artísticos e doces finos para quem exige excelência. Faça do seu momento uma obra de arte.
-          </p>
-          <div className="flex items-center gap-6 cursor-pointer group" onClick={onOpenMenu}>
-            <div className="bg-[#1A1A1A] text-[#D4AF37] w-16 h-16 rounded-full flex items-center justify-center group-hover:scale-110 group-hover:bg-[#D4AF37] group-hover:text-[#1A1A1A] transition-all duration-500 shadow-xl">
-              <ArrowRight size={24} />
+      <div className="font-sans text-brand-black selection:bg-brand-gold selection:text-white bg-brand-cream">
+
+        {/* BOTÃO ZAP */}
+        <motion.div
+          className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2 pointer-events-auto"
+          initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 2 }}
+        >
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 3, duration: 0.5 }} className="bg-white px-4 py-2 rounded-xl shadow-lg border border-gray-100 mb-1 relative hidden md:block">
+            <p className="text-sm font-bold text-gray-700 font-sans">Faça seu pedido online! 🍰</p>
+            <div className="absolute -bottom-2 right-6 w-4 h-4 bg-white transform rotate-45 border-b border-r border-gray-100"></div>
+          </motion.div>
+          <button onClick={handleWhatsApp} className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_8px_30px_rgb(37,211,102,0.4)] transition-all duration-300 hover:scale-110 hover:shadow-[0_15px_40px_rgb(37,211,102,0.6)] cursor-pointer">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#25D366] opacity-30 duration-1000"></span>
+            <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm border-2 border-white z-10 animate-bounce">1</span>
+            <MessageCircle className="h-8 w-8 fill-current relative z-10" />
+          </button>
+        </motion.div>
+
+        {/* NAVBAR */}
+        <nav className="fixed left-0 top-0 z-[60] w-full px-4 py-4 md:py-6 transition-all duration-300 pointer-events-none">
+          <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/20 bg-white/80 px-6 py-3 backdrop-blur-md shadow-sm pointer-events-auto">
+
+            <a href="#inicio" onClick={(e) => scrollToSection(e, '#inicio')} className="cursor-pointer">
+              <h1 className="font-display text-xl md:text-2xl font-bold tracking-tight text-brand-black">
+                ely<span className="text-brand-gold">.</span>doces
+              </h1>
+            </a>
+
+            <div className="hidden gap-8 font-medium text-sm md:flex font-sans">
+              {['Início', 'Menu', 'Sobre', 'Contato'].map((item) => {
+                const id = `#${item.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "")}`;
+                return (
+                  <a key={item} href={id} onClick={(e) => scrollToSection(e, id)} className="hover:text-brand-gold transition-colors cursor-pointer">{item}</a>
+                )
+              })}
             </div>
-            <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#1A1A1A] group-hover:text-[#D4AF37] transition-colors">Ver Cardápio</span>
+
+            <div className="hidden md:block">
+              <button onClick={handleWhatsApp} className="rounded-full bg-brand-black px-5 py-2 text-xs font-bold text-white transition-transform hover:scale-105 hover:bg-brand-gold hover:text-brand-black uppercase tracking-wide font-display">Fazer Pedido</button>
+            </div>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden text-brand-black p-1">
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
+            </button>
           </div>
-        </motion.div>
-        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }} className="relative hidden lg:block">
-          <div className="absolute inset-0 bg-[#D4AF37]/20 rounded-full blur-[120px] transform translate-y-20 scale-90" />
-          <img src="https://images.unsplash.com/photo-1535141192574-5d4897c12636?q=80&w=1000&auto=format&fit=crop" alt="Bolo Luxuoso" className="relative w-full h-[650px] object-cover rounded-[100px_0px_100px_0px] shadow-2xl z-10" />
-        </motion.div>
-      </div>
-    </section>
-  );
-};
 
-const Marquee = () => {
-  return (
-    <div className="bg-[#1A1A1A] py-8 overflow-hidden whitespace-nowrap relative z-20 border-t border-b border-[#D4AF37]/20">
-      <div className="inline-block animate-marquee">
-        {[1,2,3,4,5].map((i) => (
-          <span key={i} className="text-[#F9F5F0] font-display text-4xl md:text-6xl mx-8 tracking-wider italic opacity-90">
-            FEITO À MÃO • CHOCOLATE BELGA • INGREDIENTES NATURAIS • <span className="text-[#D4AF37]">ELY DOCES</span> • 
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-};
+          <AnimatePresence>
+            {isMobileMenuOpen && (
+              <motion.div initial={{ opacity: 0, y: -20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.95 }} className="absolute top-20 left-4 right-4 rounded-3xl bg-white p-6 shadow-2xl md:hidden border border-gray-100 pointer-events-auto z-[70]">
+                <div className="flex flex-col gap-4 text-center font-display text-xl">
+                  {['Início', 'Menu', 'Sobre', 'Contato'].map((item) => {
+                    const id = `#${item.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "")}`;
+                    return (
+                      <a key={item} href={id} onClick={(e) => scrollToSection(e, id)} className="py-2 hover:text-brand-gold transition-colors cursor-pointer">{item}</a>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </nav>
 
-const VisualSection = () => {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], ["-20%", "20%"]);
+        {/* 1. HERO - ID="inicio" */}
+        <section id="inicio" className="sticky top-0 z-10 flex h-[100vh] items-center justify-center overflow-hidden bg-brand-cream px-4 shadow-xl border-b border-black/5">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 md:gap-16 lg:grid-cols-2 pt-20">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: isLoading ? 0 : 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="space-y-6 text-center lg:text-left z-10 order-2 lg:order-1"
+            >
+              <div className="inline-flex items-center gap-2 rounded-full border border-brand-black/5 bg-white px-3 py-1 md:px-4 md:py-1.5 shadow-sm">
+                <Star className="h-3 w-3 fill-brand-gold text-brand-gold" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-black/60 font-sans">Alta Confeitaria</span>
+              </div>
+              <h2 className="font-display text-4xl leading-[1.1] md:text-6xl lg:text-7xl xl:text-8xl tracking-tight text-brand-black efeito-texto">
+                Doçura em <br /><span className="text-brand-gold">Cada Detalhe.</span>
+              </h2>
+              <p className="mx-auto max-w-md text-base md:text-lg leading-relaxed text-gray-600 lg:mx-0 px-2 md:px-0 font-sans efeito-texto">
+                Transformamos ingredientes nobres em memórias inesquecíveis. Bolos artísticos e doces finos.
+              </p>
+              <div className="flex flex-col items-center gap-4 sm:flex-row lg:justify-start pb-4 md:pb-0">
+                <button onClick={(e) => scrollToSection(e, '#menu')} className="w-full sm:w-auto group flex items-center justify-center gap-2 rounded-full bg-brand-gold px-8 py-4 text-brand-black shadow-lg shadow-brand-gold/30 transition-all active:scale-95 hover:bg-brand-black hover:text-white font-display text-sm cursor-pointer">
+                  <span>Ver Cardápio</span>
+                  <ShoppingBag className="h-4 w-4 transition-transform group-hover:-translate-y-1 group-hover:rotate-12" />
+                </button>
+              </div>
+            </motion.div>
 
-  return (
-    <section id="story" ref={ref} className="relative h-[80vh] flex items-center justify-center overflow-hidden">
-      <motion.div style={{ y }} className="absolute inset-0 w-full h-[120%] bg-cover bg-center pointer-events-none"
-        style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?q=80&w=2000&auto=format&fit=crop")', y }}
-      />
-      <div className="absolute inset-0 bg-black/60" />
-      <div className="relative z-10 text-center text-white px-6">
-        <FadeInUp>
-          <div className="w-20 h-20 mx-auto mb-8 border border-white/30 rounded-full flex items-center justify-center text-white backdrop-blur-sm hover:bg-[#D4AF37] hover:border-[#D4AF37] hover:text-[#1A1A1A] transition-all duration-500 cursor-pointer">
-             <Play className="w-8 h-8 ml-1" fill="currentColor" />
+            <motion.div
+              style={{ y: yHero, rotate: rotateHero }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: isLoading ? 0 : 1, scale: 1 }}
+              transition={{ duration: 1, delay: 0.2 }}
+              className="relative flex justify-center z-0 order-1 lg:order-2"
+            >
+              <div className="absolute top-1/2 left-1/2 -z-10 h-[280px] w-[280px] md:h-[500px] md:w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-gold/10 blur-[60px] md:blur-[100px]" />
+              <div className="animate-float relative aspect-[4/5] w-64 md:w-full max-w-md overflow-hidden rounded-[2rem] shadow-2xl mx-auto border-4 border-white/50">
+                <img src="https://images.unsplash.com/photo-1535141192574-5d4897c12636?q=80&w=987&auto=format&fit=crop" alt="Bolo Artesanal" className="h-full w-full object-cover" />
+              </div>
+            </motion.div>
           </div>
-          <h2 className="font-display text-5xl md:text-7xl mb-6">Nossa Arte</h2>
-          <p className="max-w-xl mx-auto text-lg font-light tracking-wide text-gray-200">
-            Conheça o nosso atelier onde transformamos açúcar em sonhos.
-          </p>
-        </FadeInUp>
-      </div>
-    </section>
-  );
-};
+        </section>
 
-const WhatsAppButton = () => {
-  return (
-    <motion.a href="https://wa.me/" target="_blank" className="fixed bottom-6 right-6 z-50 group" whileHover={{ scale: 1.1 }} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1 }}>
-      <span className="absolute inset-0 rounded-full bg-green-500 opacity-40 animate-ping-slow"></span>
-      <div className="relative bg-[#25D366] w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:bg-[#20bd5a] transition-colors">
-        <Phone className="text-white w-7 h-7 fill-current" />
-      </div>
-    </motion.a>
-  );
-};
+        {/* 2. SOBRE */}
+        <section id="sobre" className="sticky top-0 z-20 flex h-[100vh] items-center bg-white shadow-[0_-20px_50px_rgba(0,0,0,0.15)] rounded-t-[3rem] px-4 pt-20 border-t border-gray-100 efeito-lateral">
+          <div className="mx-auto max-w-7xl px-6 grid lg:grid-cols-2 gap-12 items-center w-full">
+            <div className="relative order-2 lg:order-1 hidden md:block">
+              <motion.div style={{ y: yAbout }} className="grid grid-cols-2 gap-4">
+                <img src="https://images.unsplash.com/photo-1516919549054-e08258825f80?q=80&w=800&auto=format&fit=crop" className="rounded-3xl object-cover h-64 w-full translate-y-8 shadow-lg efeito-imagem" />
+                <img src="https://images.unsplash.com/photo-1621303837174-89787a7d4729?q=80&w=800&auto=format&fit=crop" className="rounded-3xl object-cover h-64 w-full shadow-lg efeito-imagem" />
+              </motion.div>
+            </div>
 
-// --- APP PRINCIPAL ---
-function App() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  return (
-    <div className="antialiased bg-white overflow-x-hidden font-sans selection:bg-[#D4AF37] selection:text-black">
-      <Navbar toggleMenu={() => setIsMenuOpen(true)} />
-      <Hero onOpenMenu={() => setIsMenuOpen(true)} />
-      <Marquee />
-      <IngredientsSection />
-      <VisualSection />
-      <Testimonials />
-      <Footer />
-      <WhatsAppButton />
-      <MenuModal isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-    </div>
+            <div className="order-1 lg:order-2 space-y-6">
+              <div className="flex items-center gap-2 text-brand-gold">
+                <ChefHat className="h-6 w-6" />
+                <span className="font-display font-bold text-sm uppercase tracking-widest">Nossa História</span>
+              </div>
+              <h3 className="font-display text-3xl md:text-5xl text-brand-black leading-tight efeito-texto">A arte de confeitar com amor.</h3>
+              <p className="text-gray-600 leading-relaxed text-sm md:text-base font-sans efeito-texto">Na Ely Doces, acreditamos que cada doce conta uma história. Começamos na pequena cozinha de casa e hoje levamos sabor e sofisticação.</p>
+              <ul className="space-y-4 pt-4 font-sans">
+                {['Ingredientes 100% Naturais', 'Chocolates Importados', 'Receitas Exclusivas'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 efeito-texto">
+                    <div className="h-2 w-2 rounded-full bg-brand-gold shrink-0" />
+                    <span className="font-medium text-brand-black text-sm md:text-base">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. MENU */}
+        <section id="menu" className="sticky top-0 z-30 flex h-[100vh] items-center bg-brand-cream shadow-[0_-20px_50px_rgba(0,0,0,0.15)] rounded-t-[3rem] px-4 pt-20 border-t border-brand-black/5">
+          <div className="mx-auto max-w-7xl w-full h-full flex flex-col">
+            <div className="text-center mb-8 pt-4">
+              <h3 className="font-display text-3xl md:text-5xl mb-4 efeito-texto">Nossas Criações</h3>
+              <p className="text-gray-600 text-sm md:text-base font-sans efeito-texto">Explore nossa seleção de sabores</p>
+              <div className="mt-6 flex gap-3 overflow-x-auto pb-4 md:justify-center md:pb-0 scrollbar-hide">
+                {['Todos', 'Bolos', 'Doces', 'Tortas'].map((cat) => (
+                  <button key={cat} onClick={() => setActiveCategory(cat)} className={`whitespace-nowrap px-6 py-2 rounded-full text-xs md:text-sm font-bold font-display transition-all ${activeCategory === cat ? 'bg-brand-black text-white shadow-lg' : 'bg-white text-gray-500 hover:bg-gray-100'}`}>{cat}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-grow overflow-y-auto pb-24 px-2">
+              <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 pb-10">
+                <AnimatePresence>
+                  {filteredProducts.map((product) => (
+                    <motion.div onClick={handleWhatsApp} layout initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} key={product.id} className="group relative bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer active:scale-95 border border-gray-50">
+                      <div className="h-48 md:h-56 overflow-hidden">
+                        <img src={product.img} alt={product.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                      </div>
+                      <div className="p-5">
+                        <p className="text-[10px] font-bold text-brand-gold uppercase tracking-wider mb-2 font-display">{product.category}</p>
+                        <h4 className="font-display text-lg mb-2 leading-tight">{product.name}</h4>
+                        <div className="flex justify-between items-center mt-4">
+                          <span className="font-bold text-base md:text-lg font-sans text-brand-black">{product.price}</span>
+                          <button className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-brand-black transition-colors group-hover:bg-brand-gold group-hover:text-white"><ArrowRight className="h-4 w-4" /></button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. FOOTER */}
+        <section id="contato" className="sticky top-0 z-40 flex h-[100vh] flex-col justify-center bg-brand-black text-brand-cream shadow-[0_-20px_50px_rgba(0,0,0,0.2)] rounded-t-[3rem] px-4 pt-20 border-t border-white/10">
+          <div className="pt-8 pb-8 px-6 border-b border-white/10 shrink-0">
+            <div className="mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 text-center">
+              <div className="flex flex-col items-center gap-3 group hover:scale-105 transition-transform"><div className="p-3 rounded-full bg-brand-gold/10 text-brand-gold"><Coffee className="h-6 w-6" /></div><h4 className="font-display text-xl text-white">Feito no Dia</h4></div>
+              <div className="flex flex-col items-center gap-3 group hover:scale-105 transition-transform"><div className="p-3 rounded-full bg-brand-gold/10 text-brand-gold"><Heart className="h-6 w-6" /></div><h4 className="font-display text-xl text-white">Artesanal</h4></div>
+              <div className="flex flex-col items-center gap-3 group hover:scale-105 transition-transform"><div className="p-3 rounded-full bg-brand-gold/10 text-brand-gold"><Star className="h-6 w-6" /></div><h4 className="font-display text-xl text-white">Premium</h4></div>
+            </div>
+          </div>
+
+          <footer className="flex-grow flex flex-col justify-center px-6 py-8">
+            <div className="mx-auto max-w-7xl w-full">
+              <div className="grid lg:grid-cols-2 gap-12 md:gap-16 items-end mb-12">
+                <div><h2 className="font-display text-4xl md:text-6xl text-white leading-tight mb-4 efeito-texto">Vamos tornar seu dia mais <span className="text-brand-gold italic font-serif">doce</span>?</h2></div>
+                <div className="w-full">
+                  <label className="text-xs uppercase tracking-widest text-brand-gold mb-4 block font-display">Newsletter</label>
+                  <form action={FORMSPREE_URL} method="POST" onSubmit={handleNewsletterSubmit} className="flex border-b border-white/20 pb-2"><input type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Seu e-mail" className="bg-transparent w-full text-white placeholder-gray-600 focus:outline-none font-display text-lg md:text-xl" required /><button type="submit" className="text-white hover:text-brand-gold transform hover:translate-x-1 transition-transform"><ArrowRight /></button></form>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-10 border-t border-white/10 pt-8">
+                <div className="col-span-1 md:col-span-1"><span className="text-2xl font-display font-bold text-white tracking-tight">ely<span className="text-brand-gold">.</span>doces</span></div>
+                <div className="space-y-4"><h4 className="text-brand-gold font-display font-bold text-sm uppercase tracking-wider">Contato</h4><ul className="space-y-2 text-gray-400 text-sm font-sans"><li onClick={handleWhatsApp} className="flex items-center gap-2 cursor-pointer hover:text-white"><Phone className="h-3 w-3" /> (11) 9199150-7786</li><li className="flex items-center gap-2"><MapPin className="h-3 w-3" /> Belém, PA</li><li className="flex items-center gap-2 break-all"><Mail className="h-3 w-3 shrink-0" /> {CONTACT_INFO.email}</li></ul></div>
+                <div className="space-y-4"><h4 className="text-brand-gold font-display font-bold text-sm uppercase tracking-wider">Social</h4><div className="flex gap-4"><a href={CONTACT_INFO.instagram} target="_blank" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-brand-gold hover:text-brand-black transition-colors"><Instagram className="h-5 w-5" /></a><a href="#" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-brand-gold hover:text-brand-black transition-colors"><Facebook className="h-5 w-5" /></a></div></div>
+              </div>
+              <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-600 text-center md:text-left font-sans"><p>&copy; 2026 Ely Doces. Todos os direitos reservados.</p></div>
+            </div>
+          </footer>
+        </section>
+      </div>
+    </>
   );
 }
 

@@ -1,39 +1,124 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Prata&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* =========================================
+   CONFIGURAÇÕES GLOBAIS E OTIMIZAÇÃO IOS
+   ========================================= */
 
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  font-family: 'Montserrat', sans-serif;
-  background-color: #FAFAFA;
   overflow-x: hidden;
+  background-color: #FDFBF7;
+  
+  /* Renderização de Fontes em Alta Definição */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* Utilitários de Texto */
-.font-display {
-  font-family: 'Prata', serif;
+/* OTIMIZAÇÃO PARA MOBILE (IOS/ANDROID) */
+* {
+    /* Remove aquela caixa cinza/azul quando clica em botões no celular */
+    -webkit-tap-highlight-color: transparent; 
 }
 
-/* Animação do letreiro infinito */
-@keyframes scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+/* =========================================
+   BARRA DE ROLAGEM PERSONALIZADA
+   ========================================= */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #FDFBF7;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #D4AF37;
+  border-radius: 5px;
+  border: 2px solid #FDFBF7;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #b5952f;
 }
 
-.animate-marquee {
-  animation: scroll 20s linear infinite;
+/* =========================================
+   UTILITÁRIOS PERSONALIZADOS
+   ========================================= */
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
 }
 
-/* Esconder scrollbar mantendo funcionalidade */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+/* =========================================
+   ANIMAÇÕES SCROLL-DRIVEN (NITIDEZ MÁXIMA)
+   ========================================= */
+
+/* 1. Efeito Texto */
+.efeito-texto {
+    opacity: 0; 
+    animation: text-reveal 0.8s cubic-bezier(0.17, 0.55, 0.55, 1) both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%; 
+}
+
+@keyframes text-reveal {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 2. Efeito Imagem */
+.efeito-imagem {
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: img-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 10% cover 40%;
+    transform-origin: center center;
+}
+
+@keyframes img-reveal {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(40px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* 3. EFEITO LATERAL (TIMING DE LEITURA 35%) */
+.efeito-lateral {
+    background-color: #ffffff;
+    will-change: transform, clip-path;
+    animation: lateral-wipe ease-out both; 
+    animation-timeline: view();
+    animation-range: entry 0% cover 35%;
+}
+
+@keyframes lateral-wipe {
+    0% {
+        clip-path: inset(0 100% 0 0);
+        transform: translateX(-80px);
+        box-shadow: -50px 0 100px rgba(0,0,0,0.5);
+    }
+    100% {
+        clip-path: inset(0 0 0 0);
+        transform: translateX(0);
+        box-shadow: 0 0 0 rgba(0,0,0,0);
+    }
 }
